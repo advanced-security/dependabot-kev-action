@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Action to detect if any dependabot alerts are in the list of CISA KEV CVEs and fail the workflow if so.
+Action to detect if any open Dependabot alerts are in the list of CISA KEV CVEs and fail the workflow if so.
 .DESCRIPTION
 Features:
 - optional to fail via parameter (even if alert is resolved)
@@ -78,10 +78,16 @@ $CISA_KEV_CVEs = $CISA_KEV.vulnerabilities | % { $_.cveID }
 Write-ActionInfo "CISA KEV CVEs Count: $($CISA_KEV_CVEs.Count)"
 Write-ActionDebug "CISA KE CVEs: $CISA_KEV_CVEs"
 
+#Get the list of OPEN Dependabot alerts from github repo (paginated)
+$perPage = 100
+$Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri "https://api.github.com/repos/$OrganizationName/$RepositoryName/dependabot/alerts?state=open&per_page=$perPage" -ExtendedResult $true
+$Dependabot_Alerts_CVEs = $Dependabot_Alerts.result | % { $_.security_advisory.cve_id }
+#Get next page of dependabot alerts if there is one
+while ($null -ne $Dependabot_Alerts.nextLink) {
+    $Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri $Dependabot_Alerts.nextLink -ExtendedResult $true
+    $Dependabot_Alerts_CVEs += $Dependabot_Alerts.result | % { $_.security_advisory.cve_id }
+}
 
-#Get the list of Dependabot alerts from github repo
-$Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri "https://api.github.com/repos/$OrganizationName/$RepositoryName/dependabot/alerts"
-$Dependabot_Alerts_CVEs = $Dependabot_Alerts | % { $_.security_advisory.cve_id }
 Write-ActionInfo "$OrganizationName/$RepositoryName Dependabot CVEs Count: $($Dependabot_Alerts_CVEs.Count)"
 Write-ActionDebug "$OrganizationName/$RepositoryName Dependabot CVEs: $Dependabot_Alerts_CVEs"
 
@@ -91,7 +97,7 @@ $isFail = $CVEs_Match.Count -gt 0
 
 # summary that contains list of all CVEs that match CISA KEV
 $summary = "[$OrganizationName/$RepositoryName] - "
-$summary += $isFail ? "Matching CVEs:`n $($CVEs_Match -join '`n')" : "No CVEs found in ($($CISA_KEV_CVEs.Count)) Dependabot alerts that match CISA KEV" 
+$summary += $isFail ? "Matching CISA KEV CVEs found in Dependabot alerts:`n $($CVEs_Match -join '`n')" : "No CVEs found in ($($Dependabot_Alerts_CVEs.Count)) Dependabot alerts that match CISA KEV CVEs ($($CISA_KEV_CVEs.Count))" 
 
 # Fail the action if any CVEs match CISA KEV
 if ($isFail) {
