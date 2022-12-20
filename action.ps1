@@ -49,6 +49,14 @@ else {
     Set-GitHubConfiguration -DisableTelemetry -SessionOnly
 }
 
+#check if GITHUB_TOKEN is set
+if ($null -eq $env:GITHUB_TOKEN) {
+    Set-ActionFailed -Message "GITHUB_TOKEN is not set"    
+}
+else {
+    Write-ActionDebug "GITHUB_TOKEN is set"
+}
+
 # Allows you to specify your access token as a plain-text string ("<Your Access Token>")
 # which will be securely stored on the machine for use in all future PowerShell sessions.
 $secureString = ($env:GITHUB_TOKEN | ConvertTo-SecureString -AsPlainText -Force)
