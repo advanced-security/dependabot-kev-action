@@ -76,7 +76,8 @@ $CISA_KEV = Invoke-RestMethod -Uri "https://www.cisa.gov/sites/default/files/fee
 #Get the list of CVEs from CISA KEV
 $CISA_KEV_CVEs = $CISA_KEV.vulnerabilities | % { $_.cveID }
 Write-ActionInfo "CISA KEV CVEs Count: $($CISA_KEV_CVEs.Count)"
-Write-ActionDebug "CISA KE CVEs: $Dependabot_Alerts_CVEs"
+Write-ActionDebug "CISA KE CVEs: $CISA_KEV_CVEs"
+
 
 #Get the list of Dependabot alerts from github repo
 $Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri "https://api.github.com/repos/$OrganizationName/$RepositoryName/dependabot/alerts"
