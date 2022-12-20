@@ -2,8 +2,6 @@
 .SYNOPSIS
 Action to detect if any open Dependabot alerts are in the list of CISA KEV CVEs and fail the workflow if so.
 .DESCRIPTION
-Features:
-- optional to fail via parameter (even if alert is resolved)
 Requirements:
 - GITHUB_TOKEN env variable with repo scope or security_events scope. For public repositories, you may instead use the public_repo scope.
 .EXAMPLE
@@ -16,7 +14,7 @@ Requirements:
 # Remove-Variable * -ErrorAction SilentlyContinue; 
 # PS> action.ps1
 
-A simple example execution of the internal pwsh script against an Owner/Repo and Pull Request outside of GitHub Action context
+A simple example execution of the internal pwsh script against an Owner/Repo outside of GitHub Action context
 
 .NOTES
 
@@ -78,7 +76,8 @@ $CISA_KEV_CVEs = $CISA_KEV.vulnerabilities | % { $_.cveID }
 Write-ActionInfo "CISA KEV CVEs Count: $($CISA_KEV_CVEs.Count)"
 Write-ActionDebug "CISA KE CVEs: $CISA_KEV_CVEs"
 
-#Get the list of OPEN Dependabot alerts from github repo (paginated)
+#Get the list of OPEN Dependabot alerts from github repo (paginated via -ExtendedResult)
+#https://docs.github.com/en/rest/dependabot/alerts?apiVersion=2022-11-28#list-dependabot-alerts-for-a-repository
 $perPage = 100
 $Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri "https://api.github.com/repos/$OrganizationName/$RepositoryName/dependabot/alerts?state=open&per_page=$perPage" -ExtendedResult $true
 $Dependabot_Alerts_CVEs = $Dependabot_Alerts.result | % { $_.security_advisory.cve_id }
