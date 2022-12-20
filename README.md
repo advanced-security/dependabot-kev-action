@@ -1,4 +1,4 @@
-Action to detect if any open Dependabot alerts are in the list of CISA KEV CVEs and fail the workflow.
+Action to detect if any open Dependabot alert CVEs are in the list of [CISA Known Exploitable Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) and fail the workflow.
 
  :warning: WARNING: THIS WILL MAKE DEPENDABOT ALERT DATA VISIBLE TO ANYONE WITH REPOSITORY READ ACCESS
 
