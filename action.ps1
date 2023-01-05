@@ -9,7 +9,7 @@ Requirements:
 # PS>Write-Host "initializing local run! Ensure you provide a valid GITHUB_TOKEN otherwise you will get a 401!!! "
 # $VerbosePreference = 'SilentlyContinue'
 # $env:GITHUB_TOKEN = gh auth token
-# $env:GITHUB_REPOSITORY = 'vulna-felickz/log4shell-vulnerable-app' #or $env:GITHUB_REPOSITORY = 'octodemo/demo-vulnerabilities-ghas'
+# $env:GITHUB_REPOSITORY = 'vulna-felickz/log4shell-vulnerable-app'
 # CLEAR GLOBAL VARIABLES!
 # Remove-Variable * -ErrorAction SilentlyContinue; 
 # PS> action.ps1
@@ -74,7 +74,7 @@ $CISA_KEV = Invoke-RestMethod -Uri "https://www.cisa.gov/sites/default/files/fee
 #Get the list of CVEs from CISA KEV
 $CISA_KEV_CVEs = $CISA_KEV.vulnerabilities | % { $_.cveID }
 Write-ActionInfo "CISA KEV CVEs Count: $($CISA_KEV_CVEs.Count)"
-Write-ActionDebug "CISA KE CVEs: $CISA_KEV_CVEs"
+Write-ActionDebug "CISA KEV CVEs: $CISA_KEV_CVEs"
 
 #Get the list of OPEN Dependabot alerts from github repo (paginated via -ExtendedResult)
 #https://docs.github.com/en/rest/dependabot/alerts?apiVersion=2022-11-28#list-dependabot-alerts-for-a-repository
