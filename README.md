@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'KEV Policy'
-        uses: felickz/dependabot-kev-action@v0
+        uses: advanced-security/dependabot-kev-action@v0
         env:
             GITHUB_TOKEN: ${{ secrets.DEPENDABOT_KEV_GITHUB_TOKEN }}
 ```
