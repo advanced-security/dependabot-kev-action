@@ -19,7 +19,7 @@ A simple example execution of the internal pwsh script against an Owner/Repo out
 .NOTES
 
 .LINK
-https://github.com/felickz/dependabot-kev-action
+https://github.com/advanced-security/dependabot-kev-action
 #>
 
 # Handle `Untrusted repository` prompt
