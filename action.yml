@@ -1,4 +1,4 @@
-name: Dependabot CISA Known Exploitable Vulnerabilities Action
+name: Dependabot CISA Known Exploitable Vulnerabilities
 description: Detect dependabot alerts against the list of CISA KEV CVE's
 author: "@felickz"
 runs:
