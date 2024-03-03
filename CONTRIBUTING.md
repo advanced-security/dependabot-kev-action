@@ -1,8 +1,8 @@
 ## Cutting a new release
 
-1. Update the version number in [package.json](https://github.com/actions/dependency-review-action/blob/main/package.json).
+1. (skip this for now)Update the version number in [package.json](https://github.com/actions/dependency-review-action/blob/main/package.json).
 1. Go to [Draft a new
-   release](https://github.com/felickz/dependabot-kev-action/releases/new)
+   release](https://github.com/advanced-security/dependabot-kev-action/releases/new)
    in the Releases page.
 1. Make sure that the `Publish this Action to the GitHub Marketplace`
    checkbox is enabled
