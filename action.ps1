@@ -98,6 +98,7 @@ if ($isPullRequest) {
     $depReview = Invoke-GHRestMethod -Method GET -Uri $depReviewUrl
 
     #Extract unique GHSA advisory IDs from vulnerabilities in added/changed dependencies
+    #Exclude 'removed' dependencies since those represent vulnerabilities being fixed, not introduced
     $ghsaIds = @()
     foreach ($dep in $depReview) {
         if ($dep.change_type -ne 'removed' -and $dep.vulnerabilities) {
@@ -127,7 +128,7 @@ if ($isPullRequest) {
             }
         }
         catch {
-            Write-ActionWarning "Failed to look up advisory ${ghsaId}: $_"
+            Write-ActionWarning "Failed to look up advisory ${ghsaId}: $($_.Exception.Message)"
         }
     }
 
