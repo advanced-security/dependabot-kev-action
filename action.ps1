@@ -76,27 +76,81 @@ $CISA_KEV_CVEs = $CISA_KEV.vulnerabilities | % { $_.cveID }
 Write-ActionInfo "CISA KEV CVEs Count: $($CISA_KEV_CVEs.Count)"
 Write-ActionDebug "CISA KEV CVEs: $CISA_KEV_CVEs"
 
-#Get the list of OPEN Dependabot alerts from github repo (paginated via -ExtendedResult)
-#https://docs.github.com/en/rest/dependabot/alerts?apiVersion=2022-11-28#list-dependabot-alerts-for-a-repository
-$perPage = 100
-$Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri "https://api.github.com/repos/$OrganizationName/$RepositoryName/dependabot/alerts?state=open&per_page=$perPage" -ExtendedResult $true
-$Dependabot_Alerts_CVEs = $Dependabot_Alerts.result | % { $_.security_advisory.cve_id }
-#Get next page of dependabot alerts if there is one
-while ($null -ne $Dependabot_Alerts.nextLink) {
-    $Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri $Dependabot_Alerts.nextLink -ExtendedResult $true
-    $Dependabot_Alerts_CVEs += $Dependabot_Alerts.result | % { $_.security_advisory.cve_id }
-}
+# Determine run mode based on GitHub event type
+$eventName = $env:GITHUB_EVENT_NAME
+Write-ActionInfo "GitHub Event: $eventName"
 
-Write-ActionInfo "$OrganizationName/$RepositoryName Dependabot CVEs Count: $($Dependabot_Alerts_CVEs.Count)"
-Write-ActionDebug "$OrganizationName/$RepositoryName Dependabot CVEs: $Dependabot_Alerts_CVEs"
+if ($eventName -eq 'pull_request') {
+    # PR mode: use the Dependency Review API to check only newly added dependencies
+    # https://docs.github.com/en/rest/dependency-graph/dependency-review
+    $baseRef = $env:GITHUB_BASE_REF
+    $headRef = $env:GITHUB_HEAD_REF
+    Write-ActionInfo "PR mode: checking newly added dependencies ($baseRef -> $headRef)"
+
+    # Fetch the dependency diff between base and head
+    $depReviewUri = "https://api.github.com/repos/$OrganizationName/$RepositoryName/dependency-graph/compare/$baseRef...$headRef"
+    $depReview = Invoke-GHRestMethod -Method GET -Uri $depReviewUri
+
+    # Keep only packages that are being ADDED and already have known vulnerabilities reported
+    $addedVulnPackages = @($depReview | Where-Object { $_.change_type -eq 'added' -and $_.vulnerabilities.Count -gt 0 })
+    Write-ActionInfo "Newly added packages with vulnerabilities: $($addedVulnPackages.Count)"
+
+    # Collect unique GHSA advisory IDs across all affected packages
+    $ghsaIds = $addedVulnPackages |
+        ForEach-Object { $_.vulnerabilities } |
+        ForEach-Object { $_.advisory_ghsa_id } |
+        Sort-Object -Unique
+
+    # Resolve each GHSA advisory to its CVE ID via the GitHub Advisory API
+    # https://docs.github.com/en/rest/security-advisories/global-advisories
+    $Dependabot_Alerts_CVEs = @()
+    foreach ($ghsaId in $ghsaIds) {
+        try {
+            $advisory = Invoke-GHRestMethod -Method GET -Uri "https://api.github.com/advisories/$ghsaId"
+            if ($advisory.cve_id) {
+                $Dependabot_Alerts_CVEs += $advisory.cve_id
+            }
+        }
+        catch {
+            Write-ActionWarning "Failed to fetch advisory ${ghsaId}: $_"
+        }
+    }
+
+    Write-ActionInfo "CVEs introduced by PR: $($Dependabot_Alerts_CVEs.Count)"
+    Write-ActionDebug "PR CVEs: $Dependabot_Alerts_CVEs"
+
+    # Parse PR number from GITHUB_REF (refs/pull/123/merge)
+    $prNumber = if ($env:GITHUB_REF -match 'refs/pull/(\d+)/') { $matches[1] } else { $headRef }
+    $contextLabel = "$OrganizationName/$RepositoryName PR #$prNumber"
+}
+else {
+    # Push/default mode: check all open Dependabot alerts (existing behavior)
+    Write-ActionInfo "Push mode: checking all open Dependabot alerts"
+
+    #Get the list of OPEN Dependabot alerts from github repo (paginated via -ExtendedResult)
+    #https://docs.github.com/en/rest/dependabot/alerts?apiVersion=2022-11-28#list-dependabot-alerts-for-a-repository
+    $perPage = 100
+    $Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri "https://api.github.com/repos/$OrganizationName/$RepositoryName/dependabot/alerts?state=open&per_page=$perPage" -ExtendedResult $true
+    $Dependabot_Alerts_CVEs = $Dependabot_Alerts.result | % { $_.security_advisory.cve_id }
+    #Get next page of dependabot alerts if there is one
+    while ($null -ne $Dependabot_Alerts.nextLink) {
+        $Dependabot_Alerts = Invoke-GHRestMethod -Method GET -Uri $Dependabot_Alerts.nextLink -ExtendedResult $true
+        $Dependabot_Alerts_CVEs += $Dependabot_Alerts.result | % { $_.security_advisory.cve_id }
+    }
+
+    Write-ActionInfo "$OrganizationName/$RepositoryName Dependabot CVEs Count: $($Dependabot_Alerts_CVEs.Count)"
+    Write-ActionDebug "$OrganizationName/$RepositoryName Dependabot CVEs: $Dependabot_Alerts_CVEs"
+
+    $contextLabel = "$OrganizationName/$RepositoryName"
+}
 
 #Compare the two lists
 $CVEs_Match = $CISA_KEV_CVEs | Where-Object { $Dependabot_Alerts_CVEs -contains $_ }
 $isFail = $CVEs_Match.Count -gt 0
 
 # summary that contains list of all CVEs that match CISA KEV
-$summary = "[$OrganizationName/$RepositoryName] - "
-$summary += $isFail ? "Matching CISA KEV CVEs found in Dependabot alerts:`n $($CVEs_Match -join '`n')" : "No CVEs found in ($($Dependabot_Alerts_CVEs.Count)) Dependabot alerts that match CISA KEV CVEs ($($CISA_KEV_CVEs.Count))" 
+$summary = "[$contextLabel] - "
+$summary += $isFail ? "Matching CISA KEV CVEs found in Dependabot alerts:`n $($CVEs_Match -join '`n')" : "No CVEs found in ($($Dependabot_Alerts_CVEs.Count)) Dependabot alerts that match CISA KEV CVEs ($($CISA_KEV_CVEs.Count))"
 
 # Fail the action if any CVEs match CISA KEV
 if ($isFail) {
