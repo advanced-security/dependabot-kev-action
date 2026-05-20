@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Explicit version (e.g., 0.1.0). Leave empty to use bump."
+        required: false
+        type: string
+        default: ''
+      bump:
+        description: "Auto-bump from latest release (patch/minor/major). Ignored if version is set."
+        required: false
+        type: choice
+        options:
+          - ''
+          - patch
+          - minor
+          - major
+      prerelease:
+        description: "Create as a pre-release"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    uses: advanced-security/reusable-workflows/.github/workflows/release.yml@1bbf2c8029a9cfcc587742110e9e8a24eb34c0e0 # main
+    with:
+      version: ${{ inputs.version }}
+      bump: ${{ inputs.bump }}
+      prerelease: ${{ inputs.prerelease }}
+    permissions:
+      contents: write
+      pull-requests: write
