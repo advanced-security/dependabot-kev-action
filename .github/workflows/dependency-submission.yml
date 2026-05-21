@@ -1,0 +1,16 @@
+name: Dependency Submission
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 0' # Weekly on Sundays
+
+permissions:
+  contents: write
+
+jobs:
+  dependency-submission:
+    uses: advanced-security/reusable-workflows/.github/workflows/dependency-submission.yml@1bbf2c8029a9cfcc587742110e9e8a24eb34c0e0 # main
+    secrets: inherit
