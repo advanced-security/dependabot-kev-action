@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'KEV Policy'
-        uses: advanced-security/dependabot-kev-action@v0
+        uses: advanced-security/dependabot-kev-action@v0                                          # floating major tag
+        # uses: advanced-security/dependabot-kev-action@13ad89ad9e1b1456550ebabe3e232bea84feb78b # v0.1.0 (pinned)
         env:
             GITHUB_TOKEN: ${{ secrets.DEPENDABOT_KEV_GITHUB_TOKEN }}
 ```
