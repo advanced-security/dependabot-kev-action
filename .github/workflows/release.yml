@@ -25,7 +25,7 @@ on:
 
 jobs:
   release:
-    uses: advanced-security/reusable-workflows/.github/workflows/release.yml@fc65a0660ae8b17a741ce9e172031070574e277d # v0.3.3
+    uses: advanced-security/reusable-workflows/.github/workflows/release.yml@479412fa01ef5afc87ba10aaf19bd4297edbfcd3 # v0.3.4
     with:
       version: ${{ inputs.version }}
       bump: ${{ inputs.bump }}
